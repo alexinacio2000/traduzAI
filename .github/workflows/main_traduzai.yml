@@ -1,4 +1,4 @@
-ame: Build and deploy Python app to Azure Web App - TraduzAI
+name: Build and deploy Python app to Azure Web App - TraduzAI
 on:
   push:
     branches:
