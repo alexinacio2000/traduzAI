@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradutor em Tempo Real</title>
+</head>
+<body>
+    <h1>Tradutor em Tempo Real</h1>
+    <button id="start">Iniciar Gravação</button>
+    <p>Texto Original: <span id="transcript"></span></p>
+    <p>Tradução: <span id="translation"></span></p>
+
+    <script>
+        const startButton = document.getElementById("start");
+        const transcriptEl = document.getElementById("transcript");
+        const translationEl = document.getElementById("translation");
+
+        startButton.addEventListener("click", async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks = [];
+
+            mediaRecorder.start();
+
+            mediaRecorder.addEventListener("dataavailable", event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener("stop", async () => {
+                const audioBlob = new Blob(audioChunks);
+                const reader = new FileReader();
+
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = async () => {
+                    const base64Audio = reader.result.split(",")[1];
+                    const response = await fetch("http://127.0.0.1:5000/process_audio", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ audio_data: base64Audio })
+                    });
+
+                    const result = await response.json();
+                    transcriptEl.textContent = result.transcript;
+                    translationEl.textContent = result.translation;
+                };
+            });
+
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 5000); // Grava 5 segundos
+        });
+    </script>
+</body>
+</html>
